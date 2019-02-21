@@ -4,8 +4,13 @@ import (
     "bytes"
     "encoding/json"
     "fmt"
+    "image"
+    "image/jpeg"
     "io/ioutil"
+    "log"
     "net/http"
+    "os"
+    "path"
     "strconv"
 )
 
@@ -53,6 +58,36 @@ type Result struct {
     URLs map[string]string `json:"urls"`
 }
 
+func (c *Client) DownloadRandomPhotos(dirname string, count int) (err error) {
+    log.Printf("Downloading %d image(s) into folder %s\n", count, dirname)
+    result, err := c.GetRandomPhotos(count)
+    if err != nil { return }
+
+    log.Println("Creating folder")
+    err = os.MkdirAll(dirname, os.ModePerm)
+    if err != nil { return }
+
+    n := len(result)
+    for i, item := range result {
+        fmt.Printf("Downloading image %d of %d...\r", i+1, n)
+        imageURL := item.URLs["regular"]
+        img, err := DownloadImage(imageURL)
+        if err != nil { return err }
+
+        filename := path.Join(dirname, fmt.Sprintf("%s.jpeg", item.Id))
+        fmt.Printf("Saving downloaded image into file: %s\n", filename)
+        file, err := os.Create(filename)
+        if err != nil { return err }
+
+        err = jpeg.Encode(file, img, nil)
+        if err != nil { return err }
+
+        file.Close()
+    }
+
+    return nil
+}
+
 func (c *Client) GetRandomPhotos(count int) (result []Result, err error) {
     if count <= 0 {
         err = fmt.Errorf("number of photos should be >= 1 but %d received", count)
@@ -74,4 +109,13 @@ func MustDecodeArray(data []byte) (result []Result) {
         panic(fmt.Sprintf("Cannot decode Unsplash response: %s", err))
     }
     return result
+}
+
+func DownloadImage(url string) (image image.Image, err error) {
+    resp, err := http.Get(url)
+    if err != nil { return }
+    defer resp.Body.Close()
+    image, err = jpeg.Decode(resp.Body)
+    if err != nil { return }
+    return image, nil
 }

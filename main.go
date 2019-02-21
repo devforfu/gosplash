@@ -17,9 +17,9 @@ func init() {
 func main()  {
     conf := parseArgs()
     client := unsplash.Client{AccessKey: conf["accessKey"], SecretKey: conf["secretKey"]}
-    result, err := client.GetRandomPhotos(1)
+    err := client.DownloadRandomPhotos(conf["output"], 5)
     if err != nil { log.Fatal(err) }
-    log.Printf("The number of retrieved results: %d", len(result))
+    log.Printf("Images downloaded into folder: %s", conf["output"])
 }
 
 func parseArgs() map[string]string {
