@@ -61,9 +61,13 @@ func (c *Client) GetRandomPhotos(count int) (result []Result, err error) {
     req.URL.RawQuery = values.Encode()
     data, err := sendRequest(req, c.SecretKey)
     if err != nil { return }
-    err = json.NewDecoder(bytes.NewBuffer(data)).Decode(&result)
-    if err != nil { return }
-    return result, nil
+    return MustDecodeArray(data), nil
 }
 
-
+// MustDecodeArray is sure that data contains a valid Unsplash response and panics otherwise.
+func MustDecodeArray(data []byte) (result []Result) {
+    if err := json.NewDecoder(bytes.NewBuffer(data)).Decode(&result); err != nil {
+        panic(fmt.Sprintf("Cannot decode Unsplash response: %s", err))
+    }
+    return result
+}

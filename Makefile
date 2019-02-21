@@ -21,5 +21,4 @@ clean:
 	rm -rf $(BINARY_DIR)/**
 
 test:
-	$(GOTEST) -v ./src/fetch
-	$(GOTEST) -v ./src/links
+	$(GOTEST) -v ./src/unsplash
