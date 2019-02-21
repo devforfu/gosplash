@@ -54,6 +54,10 @@ type Result struct {
 }
 
 func (c *Client) GetRandomPhotos(count int) (result []Result, err error) {
+    if count <= 0 {
+        err = fmt.Errorf("number of photos should be >= 1 but %d received", count)
+        return
+    }
     req, _ := http.NewRequest("GET", URL(RandomPhotos), nil)
     values := req.URL.Query()
     values.Set("client_id", c.AccessKey)
