@@ -4,12 +4,14 @@ import (
     "bytes"
     "encoding/json"
     "fmt"
+    "io/ioutil"
     "net/http"
+    "strconv"
 )
 
 type EndpointName uint32
 
-var Schema string = "https//api.unsplash.com"
+var Schema string = "https://api.unsplash.com/"
 
 const (
     BaseURL      EndpointName = 1 << (32 - 1 - iota)
@@ -32,10 +34,11 @@ func URL(name EndpointName) string {
 
 var sendRequest = func(req *http.Request, token string) (data []byte, err error) {
     req.Header.Set("Authorization", fmt.Sprintf("Client-ID %s", token))
-    resp, err := http.Client{}.Do(req)
+    client := http.Client{}
+    resp, err := client.Do(req)
     if err != nil { return }
     defer resp.Body.Close()
-    _, err = resp.Body.Read(data)
+    data, err = ioutil.ReadAll(resp.Body)
     if err != nil { return }
     return data, nil
 }
@@ -54,7 +57,7 @@ func (c *Client) GetRandomPhotos(count int) (result []Result, err error) {
     req, _ := http.NewRequest("GET", URL(RandomPhotos), nil)
     values := req.URL.Query()
     values.Set("client_id", c.AccessKey)
-    values.Set("count", string(count))
+    values.Set("count", strconv.Itoa(count))
     req.URL.RawQuery = values.Encode()
     data, err := sendRequest(req, c.SecretKey)
     if err != nil { return }
@@ -62,4 +65,5 @@ func (c *Client) GetRandomPhotos(count int) (result []Result, err error) {
     if err != nil { return }
     return result, nil
 }
+
 
