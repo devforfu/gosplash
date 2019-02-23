@@ -38,12 +38,16 @@ type ThumbnailMaker struct {
     In string
     // Out stores a path to the generated thumbnail.
     Out string
+    // Width defines created thumbnail width.
+    Width int
+    // Height defines created thumbnail height.
+    Height int
 }
 
 func NewThumbnailMaker(infile string) *ThumbnailMaker {
     ext := filepath.Ext(infile)
     outfile := strings.TrimSuffix(infile, ext) + ".thumb" + ext
-    return &ThumbnailMaker{In:infile, Out:outfile}
+    return &ThumbnailMaker{In:infile, Out:outfile, Width:128, Height:128}
 }
 
 // Create converts an image into smaller thumbnail and saves to the output file.
@@ -66,7 +70,7 @@ func (t *ThumbnailMaker) Create(format FileFormat) (err error) {
 func (t *ThumbnailMaker) Convert(w io.Writer, r io.Reader, format FileFormat) error {
     src, _, err := image.Decode(r)
     if err != nil { return err }
-    dst := CreateThumbnailImage(src)
+    dst := CreateThumbnailImage(src, t.Width, t.Height)
     switch format {
     case JPEG:
         return jpeg.Encode(w, dst, nil)
@@ -77,15 +81,15 @@ func (t *ThumbnailMaker) Convert(w io.Writer, r io.Reader, format FileFormat) er
     }
 }
 
-func CreateThumbnailImage(src image.Image) image.Image {
+func CreateThumbnailImage(src image.Image, width, height int) image.Image {
     xs := src.Bounds().Size().X
     ys := src.Bounds().Size().Y
 
-    width, height := 128, 128
+    //width, height := 128, 128
     if aspect := float64(xs)/float64(ys); aspect < 1.0 {
-        width = int(128 * aspect)
+        width = int(float64(width) * aspect)
     } else {
-        height = int(128 / aspect)
+        height = int(float64(height) / aspect)
     }
 
     xScale := float64(xs)/float64(width)
@@ -127,4 +131,13 @@ func ThumbnailsFromFolder(dirname string, patterns string, format FileFormat) (t
         }
     }
     return thumbs, nil
+}
+
+type ImageComposer struct {
+    Images []image.Image
+    Result string
+}
+
+func NewImageComposer(files []string) (composer *ImageComposer, err error) {
+    return nil, fmt.Errorf("not implemented")
 }
