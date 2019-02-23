@@ -2,12 +2,14 @@ package main
 
 import (
     "./src/unsplash"
+    "./src/imutil"
     "encoding/json"
     "flag"
     "github.com/mitchellh/go-homedir"
     "io/ioutil"
     "log"
     "path"
+    "strconv"
 )
 
 func init() {
@@ -16,10 +18,21 @@ func init() {
 
 func main()  {
     conf := parseArgs()
+
     client := unsplash.Client{AccessKey: conf["accessKey"], SecretKey: conf["secretKey"]}
-    err := client.DownloadRandomPhotos(conf["output"], 5)
+    output := conf["output"]
+    err := client.DownloadRandomPhotos(output, 5)
     if err != nil { log.Fatal(err) }
-    log.Printf("Images downloaded into folder: %s", conf["output"])
+
+    log.Printf("Images downloaded into folder: %s\n", output)
+    thumbs, err := imutil.ThumbnailsFromFolder(output, "jpeg|jpg|png", imutil.PNG)
+    if err != nil { log.Fatal(err) }
+
+    log.Println("Created thumbnails:")
+    n := len(strconv.Itoa(len(thumbs)))
+    for i, t := range thumbs {
+        log.Printf("\t%0*d: %s", n, i, t)
+    }
 }
 
 func parseArgs() map[string]string {

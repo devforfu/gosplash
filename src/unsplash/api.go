@@ -71,7 +71,7 @@ func (c *Client) DownloadRandomPhotos(dirname string, count int) (err error) {
     for i, item := range result {
         fmt.Printf("Downloading image %d of %d...\r", i+1, n)
         imageURL := item.URLs["regular"]
-        img, err := DownloadImage(imageURL)
+        img, err := FetchImage(imageURL)
         if err != nil { return err }
 
         filename := path.Join(dirname, fmt.Sprintf("%s.jpeg", item.Id))
@@ -82,7 +82,7 @@ func (c *Client) DownloadRandomPhotos(dirname string, count int) (err error) {
         err = jpeg.Encode(file, img, nil)
         if err != nil { return err }
 
-        file.Close()
+        _ = file.Close()
     }
 
     return nil
@@ -111,7 +111,7 @@ func MustDecodeArray(data []byte) (result []Result) {
     return result
 }
 
-func DownloadImage(url string) (image image.Image, err error) {
+func FetchImage(url string) (image image.Image, err error) {
     resp, err := http.Get(url)
     if err != nil { return }
     defer resp.Body.Close()

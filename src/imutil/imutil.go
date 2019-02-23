@@ -6,7 +6,9 @@ import (
     "image/jpeg"
     "image/png"
     "io"
+    "log"
     "os"
+    "path"
     "path/filepath"
     "strings"
 )
@@ -30,17 +32,21 @@ func Format(ext string) FileFormat {
     }
 }
 
+// ThumbnailMaker is a convenience wrapper to convert full-size image into smaller thumbnail.
 type ThumbnailMaker struct {
-    In, Out string
-    Format FileFormat
+    // In stores a path to the original image.
+    In string
+    // Out stores a path to the generated thumbnail.
+    Out string
 }
 
-func NewThumbnailMaker(infile string, format FileFormat) *ThumbnailMaker {
+func NewThumbnailMaker(infile string) *ThumbnailMaker {
     ext := filepath.Ext(infile)
     outfile := strings.TrimSuffix(infile, ext) + ".thumb" + ext
-    return &ThumbnailMaker{In:infile, Out:outfile, Format:format}
+    return &ThumbnailMaker{In:infile, Out:outfile}
 }
 
+// Create converts an image into smaller thumbnail and saves to the output file.
 func (t *ThumbnailMaker) Create(format FileFormat) (err error) {
     in, err := os.Open(t.In)
     if err != nil { return }
@@ -49,7 +55,7 @@ func (t *ThumbnailMaker) Create(format FileFormat) (err error) {
     out, err := os.Create(t.Out)
     if err != nil { return }
 
-    if err := t.Convert(out, in); err != nil {
+    if err := t.Convert(out, in, format); err != nil {
         out.Close()
         return fmt.Errorf("scaling %s to %s: %s", t.In, t.Out, err)
     }
@@ -57,11 +63,11 @@ func (t *ThumbnailMaker) Create(format FileFormat) (err error) {
     return out.Close()
 }
 
-func (t *ThumbnailMaker) Convert(w io.Writer, r io.Reader) error {
+func (t *ThumbnailMaker) Convert(w io.Writer, r io.Reader, format FileFormat) error {
     src, _, err := image.Decode(r)
     if err != nil { return err }
     dst := CreateThumbnailImage(src)
-    switch t.Format{
+    switch format {
     case JPEG:
         return jpeg.Encode(w, dst, nil)
     case PNG:
@@ -95,4 +101,30 @@ func CreateThumbnailImage(src image.Image) image.Image {
     }
 
     return dst
+}
+
+// ThumbnailsFromFolder traverses a directory and converts all images with formats from pipe-separated
+// patterns string into thumbnails.
+func ThumbnailsFromFolder(dirname string, patterns string, format FileFormat) (thumbs []string, err error) {
+    for _, pattern := range strings.Split(patterns, "|") {
+        extensions:= []string{strings.ToLower(pattern), strings.ToUpper(pattern)}
+        for _, ext := range extensions {
+            glob := path.Join(dirname, fmt.Sprintf("*.%s", ext))
+            files, err := filepath.Glob(glob)
+            if err != nil {
+                log.Printf("cannot discover *.%s images: %s", ext, err)
+                continue
+            }
+            for _, file := range files {
+                maker := NewThumbnailMaker(file)
+                err := maker.Create(format)
+                if err != nil {
+                    log.Printf("cannot create thumbnail image from file: %s", file)
+                    return nil, err
+                }
+                thumbs = append(thumbs, maker.Out)
+            }
+        }
+    }
+    return thumbs, nil
 }
