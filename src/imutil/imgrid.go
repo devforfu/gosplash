@@ -50,8 +50,8 @@ func (g *ImageGrid) CreateFromArray(imageFiles []string) (image.Image, error) {
     images, err := ReadImages(imageFiles)
     if err != nil { return nil, err }
 
-    _ := CreateCanvas(images, nRows, nCols)
-    return nil, fmt.Errorf("not implemented")
+    canvas := CreateCanvas(images, nRows, nCols)
+    return canvas, nil
 }
 
 func CreateCanvas(images []image.Image, nRows, nCols int) image.Image {

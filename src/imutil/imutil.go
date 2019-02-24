@@ -1,8 +1,11 @@
 package imutil
 
 import (
+    "fmt"
     "image"
     "os"
+    "path"
+    "path/filepath"
     "strings"
 )
 
@@ -25,6 +28,8 @@ func Format(ext string) ImageFormat {
    }
 }
 
+const ImageFormats = "jpeg|jpg|png|bmp"
+
 // SplitPattern converts pipe-separated pattern into array of strings.
 // For example, the string "jpeg|png" is converted into array ["jpeg", "png"].
 func SplitPattern(pattern string) []string {
@@ -37,13 +42,25 @@ func SplitPattern(pattern string) []string {
     return result
 }
 
-func ReadImages(filenames []string) (images []image.Image, err error) {
+func ReadImages(filenames []string) ([]image.Image, error) {
+    images := make([]image.Image, 0)
     for _, filename := range filenames {
         file, err := os.Open(filename)
-        if err != nil { return }
+        if err != nil { return nil, err }
         img, _, err := image.Decode(file)
-        if err != nil { return }
+        if err != nil { return nil, err }
         images = append(images, img)
     }
     return images, nil
+}
+
+func DiscoverImages(dirname, formats string) ([]string, error) {
+    files := make([]string, 0)
+    for _, ext := range SplitPattern(formats) {
+        glob := path.Join(dirname, fmt.Sprintf("*.%s", ext))
+        matched, err := filepath.Glob(glob)
+        if err != nil { return nil, err }
+        files = append(files, matched...)
+    }
+    return files, nil
 }

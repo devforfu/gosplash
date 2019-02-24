@@ -7,7 +7,6 @@ import (
     "image/png"
     "io"
     "os"
-    "path"
     "path/filepath"
     "strings"
 )
@@ -61,20 +60,15 @@ func (t *ThumbnailMaker) Convert(w io.Writer, r io.Reader) (err error) {
 // look for and should be a pipe-separated string, like "jpeg|png".
 func (t *ThumbnailMaker) ConvertFolder(dirname string, pattern string) ([]string, error) {
     thumbs := make([]string, 0)
-    for _, ext := range SplitPattern(pattern) {
-        glob := path.Join(dirname, fmt.Sprintf("*.%s", ext))
-        files, err := filepath.Glob(glob)
+    files, err := DiscoverImages(dirname, pattern)
+    if err != nil { return nil, err }
+    for _, file := range files {
+        out := ThumbnailName(file)
+        err = t.Create(file, out)
         if err != nil {
-            return nil, fmt.Errorf("%s: %s", err, glob)
+            return nil, fmt.Errorf("%s: cannot create thumbnail: %s", err, file)
         }
-        for _, file := range files {
-            out := ThumbnailName(file)
-            err = t.Create(file, out)
-            if err != nil {
-                return nil, fmt.Errorf("%s: cannot create thumbnail: %s", err, file)
-            }
-            thumbs = append(thumbs, out)
-        }
+        thumbs = append(thumbs, out)
     }
     return thumbs, nil
 }
