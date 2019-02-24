@@ -1,6 +1,10 @@
 package imutil
 
-import "strings"
+import (
+    "image"
+    "os"
+    "strings"
+)
 
 type ImageFormat uint8
 
@@ -31,4 +35,15 @@ func SplitPattern(pattern string) []string {
         }
     }
     return result
+}
+
+func ReadImages(filenames []string) (images []image.Image, err error) {
+    for _, filename := range filenames {
+        file, err := os.Open(filename)
+        if err != nil { return }
+        img, _, err := image.Decode(file)
+        if err != nil { return }
+        images = append(images, img)
+    }
+    return images, nil
 }
