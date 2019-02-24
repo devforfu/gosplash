@@ -1,5 +1,7 @@
 package imutil
 
+import "strings"
+
 type ImageFormat uint8
 
 const (
@@ -18,7 +20,19 @@ func Format(ext string) ImageFormat {
        return Unknown
    }
 }
-//
+
+// SplitPattern converts pipe-separated pattern into array of strings.
+// For example, the string "jpeg|png" is converted into array ["jpeg", "png"].
+func SplitPattern(pattern string) []string {
+    result := make([]string, 0)
+    for _, p := range strings.Split(pattern, "|") {
+        for _, ext := range []string{strings.ToUpper(p), strings.ToLower(p)} {
+            result = append(result, ext)
+        }
+    }
+    return result
+}
+
 //// ThumbnailMaker is a convenience wrapper to convert full-size image into smaller thumbnail.
 //type ThumbnailMaker struct {
 //    // In stores a path to the original image.

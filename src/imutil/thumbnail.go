@@ -7,6 +7,8 @@ import (
     "image/png"
     "io"
     "os"
+    "path"
+    "path/filepath"
     "strings"
 )
 
@@ -55,10 +57,26 @@ func (t *ThumbnailMaker) Convert(w io.Writer, r io.Reader) (err error) {
 }
 
 // ConvertFolder traverses the dirname folder and converts all images discovered
-// images into thumbnails. The patterns string define which image extensions to
+// images into thumbnails. The pattern string define which image extensions to
 // look for and should be a pipe-separated string, like "jpeg|png".
-func (t *ThumbnailMaker) ConvertFolder(dirname string, patterns string) {
-
+func (t *ThumbnailMaker) ConvertFolder(dirname string, pattern string) ([]string, error) {
+    thumbs := make([]string, 0)
+    for _, ext := range SplitPattern(pattern) {
+        glob := path.Join(dirname, fmt.Sprintf("*.%s", ext))
+        files, err := filepath.Glob(glob)
+        if err != nil {
+            return nil, fmt.Errorf("%s: %s", err, glob)
+        }
+        for _, file := range files {
+            out := ThumbnailName(file)
+            err = t.Create(file, out)
+            if err != nil {
+                return nil, fmt.Errorf("%s: cannot create thumbnail: %s", err, file)
+            }
+            thumbs = append(thumbs, out)
+        }
+    }
+    return thumbs, nil
 }
 
 // CreateThumbnailImage rescales the src image into thumbnail with maximal
@@ -88,15 +106,8 @@ func CreateThumbnailImage(src image.Image, width, height int) image.Image {
    return dst
 }
 
-// SplitPattern converts pipe-separated pattern into array of strings.
-// For example, the string "jpeg|png" is converted into array ["jpeg", "png"].
-func SplitPattern(pattern string) []string {
-    result := make([]string, 0)
-    for _, p := range strings.Split(pattern, "|") {
-        for _, ext := range []string{strings.ToUpper(p), strings.ToLower(p)} {
-            result = append(result, ext)
-        }
-    }
-    return result
+func ThumbnailName(file string) string {
+    ext := filepath.Ext(file)
+    thumb := strings.TrimSuffix(file, ext) + ".thumb" + ext
+    return thumb
 }
-

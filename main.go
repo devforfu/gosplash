@@ -25,7 +25,8 @@ func main()  {
     if err != nil { log.Fatal(err) }
 
     log.Printf("Images downloaded into folder: %s\n", output)
-    thumbs, err := imutil.ThumbnailsFromFolder(output, "jpeg|jpg|png", imutil.PNG)
+    maker := imutil.NewThumbnailMaker(imutil.PNG, 128, 128)
+    thumbs, err := maker.ConvertFolder(output, "jpeg|jpg|png")
     if err != nil { log.Fatal(err) }
 
     log.Println("Created thumbnails:")
