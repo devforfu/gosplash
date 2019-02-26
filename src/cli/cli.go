@@ -9,6 +9,7 @@ import (
     "os"
     "path"
     "strconv"
+    "strings"
 )
 
 type ParameterType uint32
@@ -21,7 +22,7 @@ const (
 )
 
 type Command struct {
-    Parameters []Parameter
+    Parameters []*Parameter
 }
 
 func (c *Command) Parse() Params {
@@ -39,7 +40,7 @@ func (c *Command) Parse() Params {
         default:
             panic(fmt.Sprintf("Unknown parameter type: %v", p.Type))
         }
-        params[p.Name] = p
+        params[strings.TrimLeft(p.Name, "-")] = p
     }
     flag.Parse()
     for _, p := range params {
@@ -57,7 +58,7 @@ type Parameter struct {
     Default interface{}
 }
 
-func (p Parameter) TypeName() string {
+func (p *Parameter) TypeName() string {
     switch p.Type {
     case String: return "String"
     case Integer: return "Integer"
@@ -67,29 +68,29 @@ func (p Parameter) TypeName() string {
     return "Unknown"
 }
 
-func (p Parameter) String() string {
-    if p.Type == String  { return p.Value.(string) }
-    if p.Type == Integer { return strconv.Itoa(p.Value.(int)) }
+func (p *Parameter) String() string {
+    if p.Type == String  { return *p.Value.(*string) }
+    if p.Type == Integer { return strconv.Itoa(*p.Value.(*int)) }
     panic(fmt.Sprintf("cannot convert into string a parameter of type %s", p.TypeName()))
 }
 
-func (p Parameter) Integer() int {
-    if p.Type == Integer { return p.Value.(int) }
+func (p *Parameter) Integer() int {
+    if p.Type == Integer { return *p.Value.(*int) }
     panic(fmt.Sprintf("cannot convert into integer a parameter of type %s", p.TypeName()))
 }
 
-func (p Parameter) Boolean() bool {
-    if p.Type == Boolean { return p.Value.(bool) }
+func (p *Parameter) Boolean() bool {
+    if p.Type == Boolean { return *p.Value.(*bool) }
     panic(fmt.Sprintf("cannot convert into boolean a parameter of type %s", p.TypeName()))
 }
 
-func (p Parameter) Float() float64 {
-    if p.Type == Integer { return float64(p.Value.(int)) }
-    if p.Type == Float { return p.Value.(float64) }
+func (p *Parameter) Float() float64 {
+    if p.Type == Integer { return float64(*p.Value.(*int)) }
+    if p.Type == Float { return *p.Value.(*float64) }
     panic(fmt.Sprintf("cannot convert into float a parameter of type %s", p.TypeName()))
 }
 
-type Params map[string]Parameter
+type Params map[string]*Parameter
 
 // -----------------------
 // Sub-commands definition
@@ -98,20 +99,20 @@ type Params map[string]Parameter
 func Parse(args []string) Params {
     commands := map[string]*Command {
         "download": {
-            Parameters: []Parameter{
+            Parameters: []*Parameter{
                 {Name: "-conf", Type: String, Default: "unsplash.key.json", Usage: "path to the file with Unsplash API keys"},
                 {Name: "-n", Type: Integer, Default: 5, Usage: "number of images to download"},
                 {Name: "-out", Type: String, Default: path.Join(mustHomeDir(), "Unsplash"), Usage: "path to the output folder"},
             },
         },
         "thumb": {
-            Parameters: []Parameter{
+            Parameters: []*Parameter{
                 {Name:"-dir", Type:String, Default:mustWorkDir(), Usage:"path to a folder with images"},
                 {Name:"-p", Type:String, Default:imutil.ImageFormats, Usage:"image extensions pattern"},
             },
         },
         "canvas": {
-            Parameters: []Parameter{
+            Parameters: []*Parameter{
                 {Name:"-dir", Type:String, Default:mustWorkDir(), Usage:"path to a folder with images"},
             },
         },
