@@ -114,14 +114,14 @@ func Parse(args []string) Params {
     return commands[args[1]].Parse()
 }
 
-func mustHomeDir() string {
-    home, err := homedir.Dir()
-    if err != nil { log.Fatal(err) }
-    return home
-}
-
-func mustWorkDir() string {
-    workdir, err := os.Getwd()
-    if err != nil { log.Fatal(err) }
-    return workdir
-}
+//func mustHomeDir() string {
+//    home, err := homedir.Dir()
+//    if err != nil { log.Fatal(err) }
+//    return home
+//}
+//
+//func mustWorkDir() string {
+//    workdir, err := os.Getwd()
+//    if err != nil { log.Fatal(err) }
+//    return workdir
+//}
