@@ -9,7 +9,6 @@ import (
     "os"
     "path"
     "strconv"
-    "strings"
 )
 
 type ParameterType uint32
@@ -20,6 +19,8 @@ const (
     Boolean
     Float
 )
+
+type Params map[string]*Parameter
 
 type Command struct {
     Parameters []*Parameter
@@ -40,14 +41,9 @@ func (c *Command) Parse() Params {
         default:
             panic(fmt.Sprintf("Unknown parameter type: %v", p.Type))
         }
-        params[strings.TrimLeft(p.Name, "-")] = p
+        params[p.Name] = p
     }
     flag.Parse()
-    for _, p := range params {
-        if p.Value == nil {
-            p.Value = p.Default
-        }
-    }
     return params
 }
 
@@ -90,8 +86,6 @@ func (p *Parameter) Float() float64 {
     panic(fmt.Sprintf("cannot convert into float a parameter of type %s", p.TypeName()))
 }
 
-type Params map[string]*Parameter
-
 // -----------------------
 // Sub-commands definition
 // -----------------------
@@ -100,20 +94,20 @@ func Parse(args []string) Params {
     commands := map[string]*Command {
         "download": {
             Parameters: []*Parameter{
-                {Name: "-conf", Type: String, Default: "unsplash.key.json", Usage: "path to the file with Unsplash API keys"},
-                {Name: "-n", Type: Integer, Default: 5, Usage: "number of images to download"},
-                {Name: "-out", Type: String, Default: path.Join(mustHomeDir(), "Unsplash"), Usage: "path to the output folder"},
+                {Name: "conf", Type: String, Default: "unsplash.key.json", Usage: "path to the file with Unsplash API keys"},
+                {Name: "n", Type: Integer, Default: 5, Usage: "number of images to download"},
+                {Name: "out", Type: String, Default: path.Join(mustHomeDir(), "Unsplash"), Usage: "path to the output folder"},
             },
         },
         "thumb": {
             Parameters: []*Parameter{
-                {Name:"-dir", Type:String, Default:mustWorkDir(), Usage:"path to a folder with images"},
-                {Name:"-p", Type:String, Default:imutil.ImageFormats, Usage:"image extensions pattern"},
+                {Name:"dir", Type:String, Default:mustWorkDir(), Usage:"path to a folder with images"},
+                {Name:"p", Type:String, Default:imutil.ImageFormats, Usage:"image extensions pattern"},
             },
         },
         "canvas": {
             Parameters: []*Parameter{
-                {Name:"-dir", Type:String, Default:mustWorkDir(), Usage:"path to a folder with images"},
+                {Name:"dir", Type:String, Default:mustWorkDir(), Usage:"path to a folder with images"},
             },
         },
     }
